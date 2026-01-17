@@ -39,10 +39,19 @@ async function initializeIPFS() {
             showStatusMessage(`⚠ ${initResult.message}`, 'warning');
         }
     } catch (error) {
+        isInitialized = true; // Mark as initialized even on error to allow fallback mode
         showStatusMessage('⚠ IPFS unavailable. Using local storage fallback.', 'warning');
         console.error('IPFS initialization error:', error);
     }
 }
+
+async function sendToIani() {
+    // Ensure IPFS client is initialized before proceeding
+    if (!isInitialized) {
+        showStatusMessage('⚠ IPFS client is still initializing. Please wait...', 'warning');
+        return;
+    }
+    
     const input = document.getElementById('user-input').value;
     if (!input || input.trim() === '') {
         showStatusMessage('⚠ Please enter a message', 'warning');
@@ -159,4 +168,17 @@ function showStatusMessage(message, type = 'info') {
     }
 }
 
-async function sendToIani() {
+/**
+ * Handle Enter key in textarea
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('user-input');
+    if (textarea) {
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendToIani();
+            }
+        });
+    }
+});

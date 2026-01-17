@@ -25,10 +25,9 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci
+      run: npm install
       
     - name: Run IPFS integration tests
       run: npm test
@@ -144,8 +143,12 @@ jobs:
           console.log('Total time for ' + iterations + ' operations: ' + totalTime + 'ms');
           console.log('Average time per operation: ' + avgTime.toFixed(2) + 'ms');
           
-          if (avgTime > 100) {
-            console.log('⚠ Warning: Average latency exceeds 100ms');
+          // Fallback mode uses localStorage which should be very fast
+          // Use a stricter threshold to detect performance regressions
+          const THRESHOLD_MS = 50;
+          
+          if (avgTime > THRESHOLD_MS) {
+            console.log('⚠ Warning: Average latency exceeds ' + THRESHOLD_MS + 'ms');
           } else {
             console.log('✓ Performance within acceptable limits');
           }
@@ -206,11 +209,17 @@ jobs:
           UNSAFE_PATTERNS=$((UNSAFE_PATTERNS + 1))
         fi
         
+        # Verify safe DOM manipulation is being used
+        if ! grep -q "createElement\|textContent" script.js; then
+          echo "⚠ Warning: No safe DOM manipulation methods found"
+          UNSAFE_PATTERNS=$((UNSAFE_PATTERNS + 1))
+        fi
+        
         if [ $UNSAFE_PATTERNS -gt 0 ]; then
           echo "✗ Found $UNSAFE_PATTERNS potential XSS vulnerability pattern(s)"
           exit 1
         else
-          echo "✓ No XSS vulnerability patterns found"
+          echo "✓ Safe DOM manipulation verified (using createElement/textContent)"
         fi
 
   build-and-deploy:

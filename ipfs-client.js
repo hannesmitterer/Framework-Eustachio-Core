@@ -21,9 +21,8 @@ class IPFSClient {
      */
     async initialize() {
         // Check if ipfs-http-client is available (browser environment check)
-        // Support multiple possible global names for IPFS client
-        const ipfsClient = typeof window !== 'undefined' && 
-            (window.IpfsHttpClient || window.IpfsClient || window.Ipfs);
+        // The ipfs-http-client CDN bundle exposes the global `IpfsHttpClient`
+        const ipfsClient = typeof window !== 'undefined' ? window.IpfsHttpClient : null;
         
         if (!ipfsClient) {
             console.warn('IPFS HTTP Client not loaded. Running in fallback mode.');
@@ -53,12 +52,15 @@ class IPFSClient {
      */
     async connectToGateway(gatewayURL, ipfsClientLib) {
         const clientLib = ipfsClientLib || 
-            (typeof window !== 'undefined' && (window.IpfsHttpClient || window.IpfsClient || window.Ipfs));
+            (typeof window !== 'undefined' ? window.IpfsHttpClient : null);
         
         if (clientLib) {
             this.client = clientLib.create({ url: gatewayURL });
-            // Test connection with a simple operation
-            await this.client.id();
+            // Test connection with a timeout (5 seconds)
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Connection timeout')), 5000)
+            );
+            await Promise.race([this.client.id(), timeoutPromise]);
         } else {
             throw new Error('IPFS client not available');
         }
@@ -160,7 +162,8 @@ class IPFSClient {
     addToFallbackStorage(data) {
         try {
             const timestamp = Date.now();
-            const key = `fallback-${timestamp}`;
+            const random = Math.random().toString(36).substring(2, 8);
+            const key = `fallback-${timestamp}-${random}`;
             const storageData = {
                 data: data,
                 timestamp: timestamp,
@@ -176,9 +179,17 @@ class IPFSClient {
                 message: 'Stored locally. Will sync to IPFS when connection is restored.'
             };
         } catch (error) {
+            // Handle storage quota errors more gracefully
+            if (error.name === 'QuotaExceededError' || error.code === 22) {
+                return {
+                    success: false,
+                    error: 'Storage quota exceeded. Please clear browser storage or use IPFS when connection is available.',
+                    mode: 'error'
+                };
+            }
             return {
                 success: false,
-                error: 'Storage quota exceeded or localStorage unavailable',
+                error: 'localStorage unavailable. Please enable storage in browser settings.',
                 mode: 'error'
             };
         }

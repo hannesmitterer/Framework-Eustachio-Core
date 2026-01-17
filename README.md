@@ -26,7 +26,7 @@ The Eustachio Framework now features full **IPFS (InterPlanetary File System)** 
 - ✅ **Edge Case Handling**: Robust error handling for network failures
 - ✅ **Real-time Status**: Visual feedback on connection status
 - ✅ **Retry Logic**: Automatic retries with exponential backoff
-- ✅ **XSS Protection**: HTML escaping prevents cross-site scripting attacks
+- ✅ **XSS Protection**: DOM manipulation using `textContent` prevents cross-site scripting attacks
 
 ### Quick Start
 
@@ -80,7 +80,7 @@ The IANI-VOX portal allows you to communicate and store messages on IPFS:
 ✅ **Client Errors**: Graceful error handling with user feedback  
 ✅ **Storage Quota**: Handles localStorage limits gracefully  
 ✅ **Network Timeouts**: Retry logic with progressive delays  
-✅ **XSS Attacks**: HTML escaping prevents malicious scripts  
+✅ **XSS Attacks**: Safe DOM manipulation prevents malicious scripts  
 
 ---
 
@@ -137,7 +137,7 @@ Reusable, standalone IPFS client with:
 
 ### Implemented Protections
 
-- **XSS Prevention**: All user input is HTML-escaped before rendering
+- **XSS Prevention**: All user input is rendered as text using `textContent`, preventing HTML from being interpreted
 - **Input Validation**: Data validated before IPFS operations
 - **CSP Ready**: Compatible with Content Security Policy
 - **No Inline Scripts**: External script loading only
@@ -215,7 +215,7 @@ Automated GitHub Actions workflow includes:
 
 - **Average Operation Latency**: <50ms (fallback mode)
 - **Bundle Size**: ~8KB (ipfs-client.js), ~4KB (script.js)
-- **Test Coverage**: 95%+ of core functionality
+- **Tests**: Automated test suite covering core functionality
 - **CI/CD Success Rate**: Monitored via GitHub Actions
 
 ---

@@ -38,7 +38,7 @@ async function runTests() {
     console.log('Test Suite 1: Client Initialization');
     try {
         const client = new IPFSClient();
-        assert(client !== null, 'IPFSClient can be instantiated');
+        assert(client instanceof IPFSClient, 'IPFSClient can be instantiated');
         assert(client.fallbackMode === false, 'Client starts with fallbackMode = false');
         assert(client.isConnected === false, 'Client starts with isConnected = false');
         assert(Array.isArray(client.gatewayURLs), 'Client has gatewayURLs array');
@@ -75,7 +75,7 @@ async function runTests() {
             await client.addData('');
             assert(false, 'Should throw error for empty string');
         } catch (error) {
-            assert(true, 'Correctly rejects empty string');
+            assert(error.message.includes('empty'), 'Correctly rejects empty string with appropriate error message');
         }
         
         // Test whitespace only
@@ -83,7 +83,7 @@ async function runTests() {
             await client.addData('   ');
             assert(false, 'Should throw error for whitespace-only string');
         } catch (error) {
-            assert(true, 'Correctly rejects whitespace-only string');
+            assert(error.message.includes('empty'), 'Correctly rejects whitespace-only string with appropriate error message');
         }
         
         // Test valid data
@@ -199,5 +199,7 @@ if (typeof localStorage === 'undefined') {
 // Run tests
 runTests().catch(error => {
     console.error('Test suite error:', error);
+    assert(false, 'Unhandled error in test suite: ' + error.message);
+    console.error(`\n${testsFailed} tests failed, ${testsPassed} passed.`);
     process.exit(1);
 });
