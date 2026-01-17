@@ -11,5 +11,5 @@
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {},
-  "_comment": "This project uses ipfs-http-client via CDN for browser compatibility. The npm dependency is kept for reference and potential Node.js integrations."
+  "_comment": "This project uses ipfs-http-client via CDN for browser compatibility. No npm dependency is required since the library is loaded directly from CDN."
 }
