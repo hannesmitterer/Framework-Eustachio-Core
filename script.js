@@ -9,6 +9,8 @@ let ipfsClient = null;
 async function initIPFS() {
     try {
         // Connect to a public IPFS gateway (can be configured to local node)
+        // Note: Using Infura's public gateway for simplicity. For production,
+        // consider using a local IPFS node or configurable gateway endpoint.
         ipfsClient = window.IpfsHttpClient.create({
             host: 'ipfs.infura.io',
             port: 5001,
@@ -94,7 +96,10 @@ async function sendToIani() {
 
 // Simulation mode when IPFS is unavailable
 function simulateIPFSPush(input) {
-    const simulatedCID = 'Qm' + btoa(input + Date.now()).substring(0, 44);
+    // Generate a more realistic simulated CID (QmHash format)
+    // Real CIDs use base58 encoding, this is a simplified simulation
+    const hash = btoa(input + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 44);
+    const simulatedCID = 'Qm' + hash + 'a'.repeat(Math.max(0, 44 - hash.length));
     const response = `Messaggio simulato (IPFS non disponibile). S-ROI +0.0001<br><strong>CID Simulato:</strong> <code style="color: #ffaa00; font-family: monospace;">${simulatedCID}</code>`;
     chatBox.innerHTML += `<p style="color: #ffaa00;"><strong>IANI:</strong> ${response}</p>`;
     
