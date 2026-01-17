@@ -4,25 +4,58 @@ const chatBox = document.getElementById('chat-box');
 
 // Initialize IPFS client
 let ipfsClient = null;
+let ipfsInitState = 'not_started'; // 'not_started', 'initializing', 'initialized', 'failed'
 
 // Initialize IPFS connection
 async function initIPFS() {
+    // Prevent multiple simultaneous initialization attempts
+    if (ipfsInitState === 'initializing' || ipfsInitState === 'initialized') {
+        return ipfsInitState === 'initialized';
+    }
+    
+    ipfsInitState = 'initializing';
+    
     try {
-        // Connect to a public IPFS gateway (can be configured to local node)
-        // Note: Using Infura's public gateway for simplicity. For production,
-        // consider using a local IPFS node or configurable gateway endpoint.
-        ipfsClient = window.IpfsHttpClient.create({
-            host: 'ipfs.infura.io',
-            port: 5001,
-            protocol: 'https'
-        });
+        // Configure IPFS gateway connection.
+        // If Infura credentials are provided via global variables, use Infura with authentication.
+        // Otherwise, fall back to a public gateway that does not require authentication.
+        const projectId = window.INFURA_PROJECT_ID;
+        const projectSecret = window.INFURA_PROJECT_SECRET;
+
+        const hasInfuraCreds = typeof projectId === 'string' && projectId !== '' &&
+            typeof projectSecret === 'string' && projectSecret !== '';
+
+        let ipfsConfig;
+
+        if (hasInfuraCreds) {
+            // Authenticated Infura IPFS API
+            ipfsConfig = {
+                host: 'ipfs.infura.io',
+                port: 5001,
+                protocol: 'https',
+                headers: {
+                    Authorization: 'Basic ' + btoa(projectId + ':' + projectSecret)
+                }
+            };
+        } else {
+            // Fallback to a non-authenticated public IPFS gateway (configurable via globals).
+            ipfsConfig = {
+                host: window.IPFS_API_HOST || 'ipfs.io',
+                port: window.IPFS_API_PORT || 443,
+                protocol: window.IPFS_API_PROTOCOL || 'https'
+            };
+        }
+
+        ipfsClient = window.IpfsHttpClient.create(ipfsConfig);
         
         console.log('IPFS client initialized successfully');
         displaySystemMessage('Sistema IPFS connesso e pronto.');
+        ipfsInitState = 'initialized';
         return true;
     } catch (error) {
         console.error('Failed to initialize IPFS:', error);
         displaySystemMessage('Errore: Impossibile connettersi a IPFS. Utilizzando modalità simulazione.', true);
+        ipfsInitState = 'failed';
         return false;
     }
 }
@@ -30,7 +63,15 @@ async function initIPFS() {
 // Display system messages
 function displaySystemMessage(message, isError = false) {
     const color = isError ? '#ff4444' : '#00d4ff';
-    chatBox.innerHTML += `<p style="color: ${color};"><strong>SISTEMA:</strong> ${message}</p>`;
+    const p = document.createElement('p');
+    p.style.color = color;
+    
+    const strong = document.createElement('strong');
+    strong.textContent = 'SISTEMA:';
+    p.appendChild(strong);
+    p.appendChild(document.createTextNode(' ' + message));
+    
+    chatBox.appendChild(p);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
@@ -41,17 +82,23 @@ async function sendToIani() {
         return;
     }
 
-    chatBox.innerHTML += `<p><strong>UTENTE:</strong> ${input}</p>`;
+    // Safely display user message using DOM manipulation
+    const userMessageElement = document.createElement('p');
+    const userLabelElement = document.createElement('strong');
+    userLabelElement.textContent = 'UTENTE:';
+    userMessageElement.appendChild(userLabelElement);
+    userMessageElement.append(' ' + input);
+    chatBox.appendChild(userMessageElement);
     chatBox.scrollTop = chatBox.scrollHeight;
     
     try {
         // Initialize IPFS if not already done
-        if (!ipfsClient) {
+        if (ipfsInitState === 'not_started' || ipfsInitState === 'failed') {
             await initIPFS();
         }
         
         // Try to add content to IPFS
-        if (ipfsClient) {
+        if (ipfsClient && ipfsInitState === 'initialized') {
             try {
                 displaySystemMessage('Caricamento su IPFS in corso...');
                 
@@ -66,9 +113,41 @@ async function sendToIani() {
                 const { cid } = await ipfsClient.add(content);
                 const cidString = cid.toString();
                 
-                // Display success message with CID
-                const response = `Messaggio sigillato e distribuito su IPFS! La risonanza globale è aumentata. S-ROI +0.0001<br><strong>CID:</strong> <code style="color: #00ff88; font-family: monospace;">${cidString}</code><br><small>Accedi al messaggio: <a href="https://ipfs.io/ipfs/${cidString}" target="_blank" style="color: #00d4ff;">https://ipfs.io/ipfs/${cidString}</a></small>`;
-                chatBox.innerHTML += `<p style="color: #00d4ff;"><strong>IANI:</strong> ${response}</p>`;
+                // Build the response DOM safely without using innerHTML
+                const p = document.createElement('p');
+                p.style.color = '#00d4ff';
+
+                const strongPrefix = document.createElement('strong');
+                strongPrefix.textContent = 'IANI:';
+                p.appendChild(strongPrefix);
+                p.appendChild(document.createTextNode(' '));
+
+                p.appendChild(document.createTextNode('Messaggio sigillato e distribuito su IPFS! La risonanza globale è aumentata. S-ROI +0.0001'));
+                p.appendChild(document.createElement('br'));
+
+                const strongLabel = document.createElement('strong');
+                strongLabel.textContent = 'CID:';
+                p.appendChild(strongLabel);
+                p.appendChild(document.createTextNode(' '));
+
+                const codeElement = document.createElement('code');
+                codeElement.style.color = '#00ff88';
+                codeElement.style.fontFamily = 'monospace';
+                codeElement.textContent = cidString;
+                p.appendChild(codeElement);
+                p.appendChild(document.createElement('br'));
+
+                const small = document.createElement('small');
+                small.appendChild(document.createTextNode('Accedi al messaggio: '));
+                const link = document.createElement('a');
+                link.href = `https://ipfs.io/ipfs/${cidString}`;
+                link.target = '_blank';
+                link.style.color = '#00d4ff';
+                link.textContent = `https://ipfs.io/ipfs/${cidString}`;
+                small.appendChild(link);
+                p.appendChild(small);
+
+                chatBox.appendChild(p);
                 
                 // Update S-ROI
                 let currentSroi = parseFloat(sroiElement.innerText);
@@ -87,7 +166,7 @@ async function sendToIani() {
         
     } catch (error) {
         console.error('Error in sendToIani:', error);
-        displaySystemMessage('Errore imprevisto. Riprova.', true);
+        displaySystemMessage(`Errore imprevisto${error && error.message ? `: ${error.message}` : ''}. Controlla la console del browser per maggiori dettagli o riprova più tardi.`, true);
     }
     
     document.getElementById('user-input').value = '';
@@ -96,12 +175,42 @@ async function sendToIani() {
 
 // Simulation mode when IPFS is unavailable
 function simulateIPFSPush(input) {
-    // Generate a more realistic simulated CID (QmHash format)
-    // Real CIDs use base58 encoding, this is a simplified simulation
-    const hash = btoa(input + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 44);
-    const simulatedCID = 'Qm' + hash + 'a'.repeat(Math.max(0, 44 - hash.length));
-    const response = `Messaggio simulato (IPFS non disponibile). S-ROI +0.0001<br><strong>CID Simulato:</strong> <code style="color: #ffaa00; font-family: monospace;">${simulatedCID}</code>`;
-    chatBox.innerHTML += `<p style="color: #ffaa00;"><strong>IANI:</strong> ${response}</p>`;
+    // Real CIDs use base58 encoding; this is a base58-compatible simulation
+    const base58Alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    function generateBase58String(length) {
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            const index = Math.floor(Math.random() * base58Alphabet.length);
+            result += base58Alphabet.charAt(index);
+        }
+        return result;
+    }
+    const simulatedCID = 'Qm' + generateBase58String(44);
+
+    // Build the response DOM safely without using innerHTML for user-influenced data
+    const p = document.createElement('p');
+    p.style.color = '#ffaa00';
+
+    const strongPrefix = document.createElement('strong');
+    strongPrefix.textContent = 'IANI:';
+    p.appendChild(strongPrefix);
+    p.appendChild(document.createTextNode(' '));
+
+    p.appendChild(document.createTextNode('Messaggio simulato (IPFS non disponibile). S-ROI +0.0001'));
+    p.appendChild(document.createElement('br'));
+
+    const strongLabel = document.createElement('strong');
+    strongLabel.textContent = 'CID Simulato:';
+    p.appendChild(strongLabel);
+    p.appendChild(document.createTextNode(' '));
+
+    const codeElement = document.createElement('code');
+    codeElement.style.color = '#ffaa00';
+    codeElement.style.fontFamily = 'monospace';
+    codeElement.textContent = simulatedCID;
+    p.appendChild(codeElement);
+
+    chatBox.appendChild(p);
     
     let currentSroi = parseFloat(sroiElement.innerText);
     sroiElement.innerText = (currentSroi + 0.0001).toFixed(4);

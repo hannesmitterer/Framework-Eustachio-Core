@@ -9,9 +9,7 @@
   "keywords": ["ipfs", "decentralized", "kosymbiosis"],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "ipfs-http-client": "^60.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {},
-  "note": "This project uses ipfs-http-client via CDN for browser compatibility. The npm dependency is kept for reference and potential Node.js integrations."
+  "_comment": "This project uses ipfs-http-client via CDN for browser compatibility. The npm dependency is kept for reference and potential Node.js integrations."
 }
