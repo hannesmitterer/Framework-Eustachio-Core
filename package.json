@@ -1,0 +1,15 @@
+{
+  "name": "framework-eustachio-core",
+  "version": "1.0.0",
+  "description": "[![License: LAOL v1.0](https://img.shields.io/badge/License-Lex_Amoris-blue.svg)](LICENSE) [![Status: Open Source](https://img.shields.io/badge/Status-Open_Source-green.svg)]()",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ipfs-http-client": "^60.0.1"
+  }
+}
