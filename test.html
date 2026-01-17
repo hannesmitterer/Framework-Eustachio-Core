@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPFS Integration Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0a0a0c;
+            color: #e0e0e0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #16161a;
+            border: 1px solid #00d4ff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .test-result {
+            padding: 5px;
+            margin: 5px 0;
+        }
+        .pass { color: #00ff00; }
+        .fail { color: #ff4444; }
+        .info { color: #00d4ff; }
+        button {
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        button:hover {
+            background: #00a8cc;
+        }
+        #output {
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 IPFS Integration Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearOutput()">Clear Output</button>
+        <button onclick="testIPFSConnection()">Test IPFS Connection</button>
+        <button onclick="testCacheService()">Test Cache Service</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Output</h2>
+        <div id="output"></div>
+    </div>
+    
+    <!-- Load IPFS HTTP Client -->
+    <script src="https://cdn.jsdelivr.net/npm/ipfs-http-client@60.0.1/dist/index.min.js"></script>
+    
+    <!-- Load application modules -->
+    <script src="src/ipfs-service.js"></script>
+    <script src="src/cache-service.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, className = 'info') {
+            const line = document.createElement('div');
+            line.className = `test-result ${className}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+        
+        async function testIPFSConnection() {
+            log('=== Testing IPFS Connection ===', 'info');
+            
+            try {
+                // Test with public gateway
+                const ipfs = new IPFSService({
+                    host: 'ipfs.io',
+                    port: 443,
+                    protocol: 'https',
+                    debugMode: true,
+                    timeout: 10000
+                });
+                
+                log('Initializing IPFS service...', 'info');
+                const initialized = await ipfs.initialize();
+                
+                if (initialized) {
+                    log('✅ IPFS service initialized successfully', 'pass');
+                    
+                    const status = ipfs.getStatus();
+                    log(`Status: Connected=${status.connected}`, 'info');
+                    log(`Config: ${status.config.protocol}://${status.config.host}:${status.config.port}`, 'info');
+                } else {
+                    log('⚠️  IPFS initialization returned false', 'fail');
+                    const status = ipfs.getStatus();
+                    log(`Error: ${status.lastError}`, 'fail');
+                    log('This is expected if no IPFS node is available', 'info');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'fail');
+                log('This is expected if no IPFS node is available', 'info');
+            }
+        }
+        
+        async function testCacheService() {
+            log('=== Testing Cache Service ===', 'info');
+            
+            try {
+                const cache = new CacheService('test-db');
+                
+                log('Initializing cache service...', 'info');
+                await cache.initialize();
+                log('✅ Cache service initialized', 'pass');
+                
+                // Test saving data
+                log('Saving test data...', 'info');
+                await cache.saveData('test-cid-123', 'Test content data');
+                log('✅ Data saved successfully', 'pass');
+                
+                // Test retrieving data
+                log('Retrieving test data...', 'info');
+                const retrieved = await cache.getData('test-cid-123');
+                if (retrieved === 'Test content data') {
+                    log('✅ Data retrieved successfully', 'pass');
+                } else {
+                    log('❌ Retrieved data does not match', 'fail');
+                }
+                
+                // Test saving message
+                log('Saving test message...', 'info');
+                await cache.saveMessage('Hello from test', 'user');
+                log('✅ Message saved successfully', 'pass');
+                
+                // Test getting recent messages
+                log('Getting recent messages...', 'info');
+                const messages = await cache.getRecentMessages(5);
+                log(`✅ Retrieved ${messages.length} message(s)`, 'pass');
+                
+                // Test getting stats
+                log('Getting cache statistics...', 'info');
+                const stats = await cache.getStats();
+                log(`✅ Cache stats: ${stats.dataEntries} data entries, ${stats.messages} messages`, 'pass');
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'fail');
+            }
+        }
+        
+        async function testErrorHandling() {
+            log('=== Testing Error Handling ===', 'info');
+            
+            try {
+                const ipfs = new IPFSService({
+                    host: 'invalid-host-12345.test',
+                    port: 9999,
+                    protocol: 'http',
+                    debugMode: true,
+                    timeout: 3000,
+                    retryAttempts: 1
+                });
+                
+                log('Testing with invalid host...', 'info');
+                const initialized = await ipfs.initialize();
+                
+                if (!initialized) {
+                    log('✅ Error handling works correctly', 'pass');
+                    const status = ipfs.getStatus();
+                    log(`Error message: ${status.lastError}`, 'info');
+                } else {
+                    log('❌ Should have failed with invalid host', 'fail');
+                }
+            } catch (error) {
+                log(`✅ Error caught correctly: ${error.message}`, 'pass');
+            }
+        }
+        
+        async function runAllTests() {
+            clearOutput();
+            log('🚀 Starting IPFS Integration Test Suite', 'info');
+            log('', 'info');
+            
+            await testCacheService();
+            log('', 'info');
+            
+            await testIPFSConnection();
+            log('', 'info');
+            
+            await testErrorHandling();
+            log('', 'info');
+            
+            log('✅ All tests completed', 'pass');
+        }
+        
+        // Auto-run tests on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            log('Page loaded. Ready for testing.', 'info');
+            log('Click "Run All Tests" to start automated tests.', 'info');
+        });
+    </script>
+</body>
+</html>
