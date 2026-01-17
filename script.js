@@ -119,14 +119,16 @@ async function sendToIani() {
         if (ipfsService && isOnline) {
             try {
                 const result = await ipfsService.addData(input);
-                cid = result.cid;
-                
-                // Cache the CID and data
-                if (cacheService) {
-                    await cacheService.saveData(cid, input);
+                if (result && result.cid) {
+                    cid = result.cid;
+                    
+                    // Cache the CID and data
+                    if (cacheService) {
+                        await cacheService.saveData(cid, input);
+                    }
+                    
+                    console.log('[App] Message added to IPFS with CID:', cid);
                 }
-                
-                console.log('[App] Message added to IPFS with CID:', cid);
             } catch (error) {
                 console.warn('[App] Failed to add to IPFS:', error);
                 showNotification('IPFS upload failed - message saved locally', 'warning');

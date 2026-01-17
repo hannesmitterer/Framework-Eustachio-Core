@@ -99,7 +99,7 @@ class IPFSService {
                 }
 
                 const result = await this.ipfs.add(data, options);
-                const cid = result.path || result.cid.toString();
+                const cid = result.cid ? result.cid.toString() : result.toString();
                 
                 if (this.config.debugMode) {
                     console.log('[IPFS Service] Data added successfully. CID:', cid);

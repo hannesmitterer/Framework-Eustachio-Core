@@ -30,14 +30,14 @@ jobs:
     - name: Verify dependency installation
       run: |
         echo "🔍 Verifying ipfs-http-client installation..."
-        npm list ipfs-http-client || echo "⚠️  ipfs-http-client not in dependencies yet"
+        npm list ipfs-http-client
         echo "📋 All installed packages:"
         npm list --depth=0
         
     - name: Run ESLint
       run: |
         echo "🔍 Running ESLint..."
-        npm run lint || echo "⚠️  Linting completed with warnings"
+        npm run lint
         
     - name: Run IPFS Tests
       run: |

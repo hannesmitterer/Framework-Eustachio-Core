@@ -45,6 +45,10 @@ class CacheService {
 
     // Save data to cache
     async saveData(cid, data) {
+        if (!this.db) {
+            return Promise.reject(new Error('Database not initialized'));
+        }
+        
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['ipfs-data'], 'readwrite');
             const objectStore = transaction.objectStore('ipfs-data');
@@ -70,6 +74,10 @@ class CacheService {
 
     // Retrieve data from cache
     async getData(cid) {
+        if (!this.db) {
+            return Promise.reject(new Error('Database not initialized'));
+        }
+        
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['ipfs-data'], 'readonly');
             const objectStore = transaction.objectStore('ipfs-data');
@@ -92,6 +100,10 @@ class CacheService {
 
     // Save message to cache
     async saveMessage(message, type = 'user') {
+        if (!this.db) {
+            return Promise.reject(new Error('Database not initialized'));
+        }
+        
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['messages'], 'readwrite');
             const objectStore = transaction.objectStore('messages');
@@ -117,6 +129,10 @@ class CacheService {
 
     // Get recent messages
     async getRecentMessages(limit = 50) {
+        if (!this.db) {
+            return Promise.reject(new Error('Database not initialized'));
+        }
+        
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['messages'], 'readonly');
             const objectStore = transaction.objectStore('messages');
@@ -143,6 +159,10 @@ class CacheService {
 
     // Clear old cache entries (older than specified days)
     async clearOldEntries(days = 30) {
+        if (!this.db) {
+            return Promise.reject(new Error('Database not initialized'));
+        }
+        
         const cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000);
         
         return new Promise((resolve, reject) => {
@@ -174,6 +194,10 @@ class CacheService {
 
     // Get cache statistics
     async getStats() {
+        if (!this.db) {
+            return Promise.reject(new Error('Database not initialized'));
+        }
+        
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['ipfs-data', 'messages'], 'readonly');
             
