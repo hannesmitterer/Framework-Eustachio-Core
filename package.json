@@ -1,0 +1,23 @@
+{
+  "name": "framework-eustachio-core",
+  "version": "1.0.0",
+  "description": "Kosymbiosis & Truth Framework with IPFS Integration",
+  "main": "script.js",
+  "scripts": {
+    "test": "node tests/ipfs-test.js",
+    "lint": "eslint *.js src/*.js tests/*.js --fix"
+  },
+  "keywords": [
+    "ipfs",
+    "kosymbiosis",
+    "decentralized"
+  ],
+  "author": "Hannes Mitterer",
+  "license": "SEE LICENSE IN license.md",
+  "dependencies": {
+    "ipfs-http-client": "^60.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}
