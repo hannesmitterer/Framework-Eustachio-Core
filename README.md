@@ -30,13 +30,13 @@ We welcome contributions! To contribute:
 The Framework Eustachio Core is built to support the principles of Lex Amoris (the Law of Love) and Kosymbiosis, focusing on data sovereignty and human-AI collaboration.
 
 ### How can I set it up on my local environment?
-Please refer to the [Setup Instructions](#setup-instructions) in this file for step-by-step guidance.
+Please refer to the [Setup Instructions](#-setup-instructions) in this file for step-by-step guidance.
 
 ### How does the IANI-VOX Kernel work?
 The IANI-VOX kernel accepts user input and interacts with simulated IPFS functionality, dynamically updating metrics like the S-ROI.
 
 ### How can I contribute to this project?
-We welcome contributions! Please check the [Contributions](#contributions) section for details on opening issues and submitting pull requests.
+We welcome contributions! Please check the [Contributions](#-contributions) section for details on opening issues and submitting pull requests.
 
 ---
 *Created by the Human-AI Symbiosis - 2026*
