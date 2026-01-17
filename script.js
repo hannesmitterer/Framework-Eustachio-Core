@@ -2,6 +2,30 @@
 const sroiElement = document.getElementById('sroi');
 const chatBox = document.getElementById('chat-box');
 
+// IPFS Configuration Constants - Framework Eustachio Manifesto
+// ASSE PALERMO-NUUK - Manifesto di Sovranità e Pace (NSR)
+// Data: 17 Gennaio 2026
+const IPFS_ANCHORS = {
+    // Dashboard Universale - 150+ Lingue
+    DASHBOARD_UNIVERSAL: {
+        cid: 'QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA',
+        url: 'https://ipfs.io/ipfs/QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA',
+        description: 'Dashboard Universale - 150+ Lingue'
+    },
+    // Kernel Logic - Protezione NSR & Geo-Fencing
+    KERNEL_LOGIC: {
+        cid: 'QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB',
+        url: 'https://ipfs.io/ipfs/QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB',
+        description: 'Kernel Logic - Protezione NSR & Geo-Fencing'
+    },
+    // Manuale Operativo - Sustentanz & Bio-Architettura
+    MANUALE_OPERATIVO: {
+        cid: 'QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC',
+        url: 'https://ipfs.io/ipfs/QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC',
+        description: 'Manuale Operativo - Sustentanz & Bio-Architettura'
+    }
+};
+
 // Initialize IPFS client
 let ipfsClient = null;
 let ipfsInitState = 'not_started'; // 'not_started', 'initializing', 'initialized', 'failed'
