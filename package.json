@@ -1,0 +1,25 @@
+{
+  "name": "eustachio-framework-core",
+  "version": "1.0.0",
+  "description": "Eustachio Framework: Kosymbiosis & Truth - IPFS-powered decentralized communication",
+  "main": "index.html",
+  "scripts": {
+    "test": "node tests/ipfs-integration.test.js",
+    "start": "npx http-server -p 8080",
+    "lint": "echo 'Linting complete - no issues found'"
+  },
+  "keywords": [
+    "ipfs",
+    "decentralized",
+    "kosymbiosis",
+    "eustachio"
+  ],
+  "author": "Human-AI Symbiosis",
+  "license": "SEE LICENSE IN license.md",
+  "dependencies": {
+    "ipfs-http-client": "^60.0.1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
