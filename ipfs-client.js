@@ -22,7 +22,11 @@ class IPFSClient {
      */
     async initialize() {
         // Check if ipfs-http-client is available (browser environment check)
-        if (typeof window !== 'undefined' && typeof window.IpfsHttpClient === 'undefined') {
+        // Support multiple possible global names for IPFS client
+        const ipfsClient = typeof window !== 'undefined' && 
+            (window.IpfsHttpClient || window.IpfsClient || window.Ipfs);
+        
+        if (!ipfsClient) {
             console.warn('IPFS HTTP Client not loaded. Running in fallback mode.');
             this.fallbackMode = true;
             return { success: false, mode: 'fallback', message: 'IPFS client not available. Using fallback storage.' };
@@ -31,7 +35,7 @@ class IPFSClient {
         // Try to connect to IPFS gateways
         for (let i = 0; i < this.gatewayURLs.length; i++) {
             try {
-                await this.connectToGateway(this.gatewayURLs[i]);
+                await this.connectToGateway(this.gatewayURLs[i], ipfsClient);
                 this.currentGatewayIndex = i;
                 this.isConnected = true;
                 return { success: true, mode: 'ipfs', gateway: this.gatewayURLs[i] };
@@ -48,9 +52,12 @@ class IPFSClient {
     /**
      * Connect to a specific IPFS gateway
      */
-    async connectToGateway(gatewayURL) {
-        if (typeof window !== 'undefined' && window.IpfsHttpClient) {
-            this.client = window.IpfsHttpClient.create({ url: gatewayURL });
+    async connectToGateway(gatewayURL, ipfsClientLib) {
+        const clientLib = ipfsClientLib || 
+            (typeof window !== 'undefined' && (window.IpfsHttpClient || window.IpfsClient || window.Ipfs));
+        
+        if (clientLib) {
+            this.client = clientLib.create({ url: gatewayURL });
             // Test connection with a simple operation
             await this.client.id();
         } else {

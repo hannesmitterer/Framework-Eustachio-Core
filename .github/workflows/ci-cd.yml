@@ -170,15 +170,25 @@ jobs:
       run: npm ci
       
     - name: Run npm audit
-      run: npm audit --audit-level=moderate || true
+      run: npm audit --audit-level=moderate
+      continue-on-error: true
+      id: npm-audit
+      
+    - name: Report audit results
+      if: steps.npm-audit.outcome == 'failure'
+      run: |
+        echo "⚠ Security vulnerabilities detected. Review required."
+        npm audit --audit-level=moderate
+        exit 1
       
     - name: Check for XSS vulnerabilities
       run: |
         echo "Checking for potential XSS vulnerabilities..."
-        if grep -r "innerHTML.*input" script.js; then
-          echo "⚠ Warning: Potential XSS vulnerability detected"
+        if grep -r "innerHTML\s*+=" script.js; then
+          echo "⚠ Warning: innerHTML manipulation detected - review for XSS risks"
+          exit 1
         else
-          echo "✓ No obvious XSS vulnerabilities found"
+          echo "✓ No innerHTML manipulation found"
         fi
 
   build-and-deploy:

@@ -33,8 +33,13 @@ async function sendToIani() {
         return;
     }
 
-    // Add user message to chat
-    chatBox.innerHTML += `<p><strong>UTENTE:</strong> ${escapeHtml(input)}</p>`;
+    // Add user message to chat using safer DOM manipulation
+    const userMessage = document.createElement('p');
+    const userLabel = document.createElement('strong');
+    userLabel.textContent = 'UTENTE: ';
+    userMessage.appendChild(userLabel);
+    userMessage.appendChild(document.createTextNode(input));
+    chatBox.appendChild(userMessage);
     chatBox.scrollTop = chatBox.scrollHeight;
     
     // Show loading state
@@ -48,21 +53,33 @@ async function sendToIani() {
         const result = await ipfsClient.addData(input);
         
         if (result.success) {
-            let response = '';
+            let responseText = '';
             let sroiIncrease = 0.0001;
             
             if (result.mode === 'ipfs') {
-                response = `✓ Messaggio sigillato su IPFS! CID: ${result.cid.substring(0, 12)}...`;
+                responseText = `✓ Messaggio sigillato su IPFS! CID: ${result.cid.substring(0, 12)}...`;
                 sroiIncrease = 0.0002; // Higher reward for actual IPFS storage
                 showStatusMessage(`✓ Stored on IPFS: ${result.cid}`, 'success');
             } else if (result.mode === 'fallback') {
-                response = `✓ Messaggio salvato localmente. ${result.message || 'Sincronizzazione IPFS pendente.'}`;
+                responseText = `✓ Messaggio salvato localmente. ${result.message || 'Sincronizzazione IPFS pendente.'}`;
                 showStatusMessage(result.message || 'Stored in fallback storage', 'warning');
             }
             
-            // Add IANI response
-            chatBox.innerHTML += `<p style="color: #00d4ff;"><strong>IANI:</strong> ${response}</p>`;
-            chatBox.innerHTML += `<p style="color: #00d4ff;"><em>La risonanza globale è aumentata. S-ROI +${sroiIncrease.toFixed(4)}</em></p>`;
+            // Add IANI response using safer DOM manipulation
+            const ianiMessage = document.createElement('p');
+            ianiMessage.style.color = '#00d4ff';
+            const ianiLabel = document.createElement('strong');
+            ianiLabel.textContent = 'IANI: ';
+            ianiMessage.appendChild(ianiLabel);
+            ianiMessage.appendChild(document.createTextNode(responseText));
+            chatBox.appendChild(ianiMessage);
+            
+            const ianiNote = document.createElement('p');
+            ianiNote.style.color = '#00d4ff';
+            const noteEmphasis = document.createElement('em');
+            noteEmphasis.textContent = `La risonanza globale è aumentata. S-ROI +${sroiIncrease.toFixed(4)}`;
+            ianiNote.appendChild(noteEmphasis);
+            chatBox.appendChild(ianiNote);
             
             // Update S-ROI
             let currentSroi = parseFloat(sroiElement.innerText);
@@ -76,8 +93,14 @@ async function sendToIani() {
         console.error('Error sending to IPFS:', error);
         showStatusMessage(`✗ Error: ${error.message}`, 'error');
         
-        // Add error message to chat
-        chatBox.innerHTML += `<p style="color: #ff4444;"><strong>IANI:</strong> ✗ Errore: ${error.message}. Riprova più tardi.</p>`;
+        // Add error message to chat using safer DOM manipulation
+        const errorMessage = document.createElement('p');
+        errorMessage.style.color = '#ff4444';
+        const errorLabel = document.createElement('strong');
+        errorLabel.textContent = 'IANI: ';
+        errorMessage.appendChild(errorLabel);
+        errorMessage.appendChild(document.createTextNode(`✗ Errore: ${error.message}. Riprova più tardi.`));
+        chatBox.appendChild(errorMessage);
     } finally {
         // Reset UI
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -118,15 +141,6 @@ function showStatusMessage(message, type = 'info') {
             }
         }, 5000);
     }
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
 
 /**
