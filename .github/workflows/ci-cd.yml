@@ -182,24 +182,35 @@ jobs:
       
     - name: Run npm audit
       run: npm audit --audit-level=moderate
-      continue-on-error: true
-      id: npm-audit
-      
-    - name: Report audit results
-      if: steps.npm-audit.outcome == 'failure'
-      run: |
-        echo "⚠ Security vulnerabilities detected. Review required."
-        npm audit --audit-level=moderate
-        exit 1
       
     - name: Check for XSS vulnerabilities
       run: |
         echo "Checking for potential XSS vulnerabilities..."
-        if grep -r "innerHTML\s*+=" script.js; then
-          echo "⚠ Warning: innerHTML manipulation detected - review for XSS risks"
+        UNSAFE_PATTERNS=0
+        
+        # Check for innerHTML manipulation
+        if grep -rE "innerHTML\s*[+=]" script.js 2>/dev/null; then
+          echo "⚠ Warning: innerHTML manipulation detected"
+          UNSAFE_PATTERNS=$((UNSAFE_PATTERNS + 1))
+        fi
+        
+        # Check for outerHTML manipulation
+        if grep -rE "outerHTML\s*[+=]" script.js 2>/dev/null; then
+          echo "⚠ Warning: outerHTML manipulation detected"
+          UNSAFE_PATTERNS=$((UNSAFE_PATTERNS + 1))
+        fi
+        
+        # Check for document.write
+        if grep -r "document\.write" script.js 2>/dev/null; then
+          echo "⚠ Warning: document.write detected"
+          UNSAFE_PATTERNS=$((UNSAFE_PATTERNS + 1))
+        fi
+        
+        if [ $UNSAFE_PATTERNS -gt 0 ]; then
+          echo "✗ Found $UNSAFE_PATTERNS potential XSS vulnerability pattern(s)"
           exit 1
         else
-          echo "✓ No innerHTML manipulation found"
+          echo "✓ No XSS vulnerability patterns found"
         fi
 
   build-and-deploy:

@@ -10,8 +10,7 @@ class IPFSClient {
         this.fallbackMode = false;
         this.gatewayURLs = [
             'https://ipfs.infura.io:5001',
-            'http://localhost:5001',
-            'https://dweb.link'
+            'http://localhost:5001'
         ];
         this.currentGatewayIndex = 0;
         this.maxRetries = 3;

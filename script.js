@@ -7,8 +7,26 @@ const statusElement = document.getElementById('ipfs-status');
 let ipfsClient = new IPFSClient();
 let isInitialized = false;
 
-// Initialize on page load
-window.addEventListener('DOMContentLoaded', async () => {
+/**
+ * Initialize on page load and handle Enter key
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize IPFS connection
+    initializeIPFS();
+    
+    // Setup Enter key handler for textarea
+    const textarea = document.getElementById('user-input');
+    if (textarea) {
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendToIani();
+            }
+        });
+    }
+});
+
+async function initializeIPFS() {
     showStatusMessage('Initializing IPFS connection...', 'info');
     
     try {
@@ -24,9 +42,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         showStatusMessage('⚠ IPFS unavailable. Using local storage fallback.', 'warning');
         console.error('IPFS initialization error:', error);
     }
-});
-
-async function sendToIani() {
+}
     const input = document.getElementById('user-input').value;
     if (!input || input.trim() === '') {
         showStatusMessage('⚠ Please enter a message', 'warning');
@@ -143,17 +159,4 @@ function showStatusMessage(message, type = 'info') {
     }
 }
 
-/**
- * Handle Enter key in textarea
- */
-document.addEventListener('DOMContentLoaded', () => {
-    const textarea = document.getElementById('user-input');
-    if (textarea) {
-        textarea.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendToIani();
-            }
-        });
-    }
-});
+async function sendToIani() {
