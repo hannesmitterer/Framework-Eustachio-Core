@@ -1,7 +1,7 @@
 // IPFS Service Test Suite
 // Tests IPFS connectivity, data operations, and error handling
 
-const IPFSService = require('../src/ipfs-service.js');
+import IPFSService from '../src/ipfs-service.js';
 
 // Test configuration
 const TEST_CONFIG = {

@@ -1,6 +1,10 @@
 // IndexedDB Cache Module
 // Provides local caching for offline functionality
 
+// Constants
+const DEFAULT_MESSAGE_LIMIT = 50;
+const DEFAULT_CACHE_RETENTION_DAYS = 30;
+
 class CacheService {
     constructor(dbName = 'eustachio-cache', version = 1) {
         this.dbName = dbName;
@@ -13,8 +17,19 @@ class CacheService {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(this.dbName, this.version);
 
-            request.onerror = () => {
-                reject(new Error('Failed to open IndexedDB'));
+            request.onerror = (event) => {
+                const err = event && event.target && event.target.error;
+                let message = 'Failed to initialize cache storage';
+
+                if (err) {
+                    if (err.name) {
+                        message += `: ${err.name}`;
+                    } else if (err.message) {
+                        message += `: ${err.message}`;
+                    }
+                }
+
+                reject(new Error(message));
             };
 
             request.onsuccess = (event) => {
@@ -128,7 +143,7 @@ class CacheService {
     }
 
     // Get recent messages
-    async getRecentMessages(limit = 50) {
+    async getRecentMessages(limit = DEFAULT_MESSAGE_LIMIT) {
         if (!this.db) {
             return Promise.reject(new Error('Database not initialized'));
         }
@@ -146,19 +161,28 @@ class CacheService {
                 if (cursor && messages.length < limit) {
                     messages.push(cursor.value);
                     cursor.continue();
-                } else {
-                    resolve(messages.reverse());
                 }
+                // When there is no cursor result or the limit is reached,
+                // we simply stop requesting more records. The transaction
+                // will complete and resolve the promise in oncomplete.
             };
 
             request.onerror = () => {
+                reject(new Error('Failed to retrieve messages from cache'));
+            };
+
+            transaction.oncomplete = () => {
+                resolve(messages.reverse());
+            };
+
+            transaction.onerror = () => {
                 reject(new Error('Failed to retrieve messages from cache'));
             };
         });
     }
 
     // Clear old cache entries (older than specified days)
-    async clearOldEntries(days = 30) {
+    async clearOldEntries(days = DEFAULT_CACHE_RETENTION_DAYS) {
         if (!this.db) {
             return Promise.reject(new Error('Database not initialized'));
         }
@@ -172,22 +196,56 @@ class CacheService {
             const range = IDBKeyRange.upperBound(cutoffTime);
             
             let deletedCount = 0;
+            let settled = false;
+
+            const safeResolve = (value) => {
+                if (!settled) {
+                    settled = true;
+                    resolve(value);
+                }
+            };
+
+            const safeReject = (error) => {
+                if (!settled) {
+                    settled = true;
+                    reject(error);
+                }
+            };
+
             const request = index.openCursor(range);
 
             request.onsuccess = (event) => {
                 const cursor = event.target.result;
                 if (cursor) {
-                    cursor.delete();
-                    deletedCount++;
+                    const deleteRequest = cursor.delete();
+
+                    deleteRequest.onsuccess = () => {
+                        deletedCount++;
+                    };
+
+                    deleteRequest.onerror = () => {
+                        console.error('[Cache Service] Failed to delete old cache entry');
+                    };
+
                     cursor.continue();
-                } else {
-                    console.log(`[Cache Service] Cleared ${deletedCount} old entries`);
-                    resolve(deletedCount);
                 }
             };
 
             request.onerror = () => {
-                reject(new Error('Failed to clear old cache entries'));
+                safeReject(new Error('Failed to clear old cache entries'));
+            };
+
+            transaction.oncomplete = () => {
+                console.log(`[Cache Service] Cleared ${deletedCount} old entries`);
+                safeResolve(deletedCount);
+            };
+
+            transaction.onerror = () => {
+                safeReject(new Error('Failed to clear old cache entries (transaction error)'));
+            };
+
+            transaction.onabort = () => {
+                safeReject(new Error('Failed to clear old cache entries (transaction aborted)'));
             };
         });
     }
@@ -225,7 +283,10 @@ class CacheService {
     }
 }
 
-// Export for browser environment
+// Export for both browser and Node.js
+export default CacheService;
+
+// Also make available globally in browser
 if (typeof window !== 'undefined') {
     window.CacheService = CacheService;
 }

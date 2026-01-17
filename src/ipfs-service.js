@@ -24,7 +24,11 @@ class IPFSService {
     // Initialize IPFS client
     async initialize() {
         if (this.config.debugMode) {
-            console.log('[IPFS Service] Initializing with config:', this.config);
+            console.log('[IPFS Service] Initializing with config:', {
+                ...this.config,
+                pinataApiKey: this.config.pinataApiKey ? '[REDACTED]' : null,
+                pinataSecretKey: this.config.pinataSecretKey ? '[REDACTED]' : null
+            });
         }
 
         try {
@@ -91,6 +95,18 @@ class IPFSService {
             throw new Error('IPFS service not connected. Call initialize() first.');
         }
 
+        // Validate input data
+        if (data === null || data === undefined) {
+            throw new Error('Data cannot be null or undefined');
+        }
+
+        // Ensure data is in a format IPFS can handle
+        const validTypes = ['string', 'object'];
+        const dataType = typeof data;
+        if (!validTypes.includes(dataType) && !(data instanceof Uint8Array) && !ArrayBuffer.isView(data)) {
+            throw new Error(`Invalid data type: ${dataType}. Expected string, Uint8Array, or Buffer`);
+        }
+
         let lastError;
         for (let attempt = 1; attempt <= this.config.retryAttempts; attempt++) {
             try {
@@ -123,7 +139,7 @@ class IPFSService {
                 }
 
                 if (attempt < this.config.retryAttempts) {
-                    await this.delay(this.config.retryDelay);
+                    await this._delay(this.config.retryDelay);
                 }
             }
         }
@@ -200,6 +216,17 @@ class IPFSService {
             });
 
             if (response.ok) {
+                // Validate response body to ensure pinning actually succeeded
+                const result = await response.json();
+                
+                if (!result || !result.IpfsHash) {
+                    throw new Error('Invalid Pinata response: missing IpfsHash');
+                }
+                
+                if (result.IpfsHash !== cid) {
+                    throw new Error(`Pinata CID mismatch: expected ${cid}, got ${result.IpfsHash}`);
+                }
+                
                 if (this.config.debugMode) {
                     console.log('[IPFS Service] Successfully pinned to Pinata:', cid);
                 }
@@ -228,16 +255,21 @@ class IPFSService {
         };
     }
 
-    // Helper: delay function for retry mechanism
-    delay(ms) {
+    // Helper: delay function for retry mechanism (private implementation)
+    _delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Public wrapper maintained for backward compatibility
+    delay(ms) {
+        return this._delay(ms);
     }
 }
 
 // Export for both browser and Node.js
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = IPFSService;
-}
+export default IPFSService;
+
+// Also make available globally in browser
 if (typeof window !== 'undefined') {
     window.IPFSService = IPFSService;
 }
