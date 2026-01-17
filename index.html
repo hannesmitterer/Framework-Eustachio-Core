@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eustachio Framework - IANI Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/ipfs-http-client@60.0.1/dist/index.min.js"></script>
 </head>
 <body>
     <div id="google_translate_element"></div>
@@ -12,6 +13,9 @@
     <header>
         <h1>KOSYMBIOSIS DASHBOARD</h1>
         <p id="tagline">Lex Amoris Signature: Universal Truth</p>
+        <p id="ipfs-info" style="font-size: 0.9em; color: #00d4ff; margin-top: 10px;">
+            🌐 Powered by IPFS - InterPlanetary File System for decentralized data storage
+        </p>
     </header>
 
     <main>
@@ -23,9 +27,12 @@
 
         <section id="iani-vox">
             <h2>IANI-VOX: Portale di Comunicazione</h2>
+            <p style="font-size: 0.9em; color: #999; margin-bottom: 10px;">
+                I tuoi messaggi sono archiviati in modo decentralizzato su IPFS. Ogni messaggio riceve un identificatore univoco (CID).
+            </p>
             <div id="chat-box"></div>
             <div class="input-group">
-                <textarea id="user-input" placeholder="Scrivi qui... La tua voce è sovrana."></textarea>
+                <textarea id="user-input" placeholder="Scrivi qui il tuo messaggio... La tua voce è sovrana e sarà distribuita tramite IPFS."></textarea>
                 <button onclick="sendToIani()">PUSH TO KERNEL (IPFS)</button>
             </div>
         </section>

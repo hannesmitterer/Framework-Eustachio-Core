@@ -1,0 +1,17 @@
+{
+  "name": "framework-eustachio-core",
+  "version": "1.0.0",
+  "description": "Eustachio Framework - IPFS-enabled decentralized dashboard for Kosymbiosis",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["ipfs", "decentralized", "kosymbiosis"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ipfs-http-client": "^60.0.1"
+  },
+  "devDependencies": {},
+  "note": "This project uses ipfs-http-client via CDN for browser compatibility. The npm dependency is kept for reference and potential Node.js integrations."
+}
