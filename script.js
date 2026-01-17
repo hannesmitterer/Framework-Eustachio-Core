@@ -137,9 +137,13 @@ function scrollChatToBottom() {
  * @returns {string} Escaped text
  */
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return text.replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[char]));
 }
 
 // Add Enter key support for textarea (Shift+Enter for new line)
