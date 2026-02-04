@@ -24,28 +24,30 @@ Questo manifesto stabilisce i principi fondamentali del **Framework Eustachio**,
 
 ## 🌐 PROTOCOLLO DI ACCESSO UNIVERSALE (IPFS ANCHORS)
 
+**Note**: The CIDs listed below are examples for the Framework Eustachio architecture. These will be replaced with actual IPFS uploads of the manifesto documents before the v1.0 production release.
+
 Questi Hash rappresentano il contenuto integro e protetto del Framework Eustachio.  
 **Nessuna autorità centrale può alterare o rimuovere questi dati.**
 
 ### 📊 Dashboard Universale - 150+ Lingue
 **Accessibilità Globale per Tutta l'Umanità**
 
-- **CID**: `QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA`
-- **Link**: https://ipfs.io/ipfs/QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA
+- **CID** (Example): `QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA`
+- **Link**: https://ipfs.io/ipfs/QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA *(pending upload)*
 - **Descrizione**: Dashboard multilingua che permette l'accesso al framework in oltre 150 lingue, garantendo che la verità e la libertà siano accessibili a ogni essere umano, indipendentemente dalla lingua madre.
 
 ### 🛡️ Kernel Logic - Protezione NSR & Geo-Fencing
 **Il Cuore Tecnico della Sovranità Digitale**
 
-- **CID**: `QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB`
-- **Link**: https://ipfs.io/ipfs/QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB
+- **CID** (Example): `QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB`
+- **Link**: https://ipfs.io/ipfs/QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB *(pending upload)*
 - **Descrizione**: Logica del kernel che implementa la Non-Slavery Rule (NSR) e il geo-fencing etico, proteggendo gli utenti da sistemi oppressivi e garantendo la sovranità dei dati personali.
 
 ### 🌱 Manuale Operativo - Sustentanz & Bio-Architettura
 **Guida alla Vita Sostenibile e Armonica**
 
-- **CID**: `QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC`
-- **Link**: https://ipfs.io/ipfs/QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC
+- **CID** (Example): `QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC`
+- **Link**: https://ipfs.io/ipfs/QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC *(pending upload)*
 - **Descrizione**: Manuale operativo per l'implementazione della Sustentanz (sostenibilità) e della bio-architettura nel framework, integrando principi ecologici e di armonia con la natura.
 
 ---

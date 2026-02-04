@@ -243,19 +243,24 @@ Progetti derivati da questo framework:
 ## Articolo 9: IPFS Anchors e Immutabilità
 
 ### 9.1 Ancoraggio su IPFS
-Tutti i documenti fondamentali del Framework Eustachio sono ancorati su IPFS con CID verificabili:
+
+**Status**: Example CIDs - Actual uploads pending for v1.0 release
+
+Tutti i documenti fondamentali del Framework Eustachio saranno ancorati su IPFS con CID verificabili:
 
 - **Dashboard Universale - 150+ Lingue**
-  - CID: `QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA`
-  - URL: https://ipfs.io/ipfs/QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA
+  - CID (Example): `QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA`
+  - URL: https://ipfs.io/ipfs/QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA *(pending)*
 
 - **Kernel Logic - Protezione NSR & Geo-Fencing**
-  - CID: `QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB`
-  - URL: https://ipfs.io/ipfs/QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB
+  - CID (Example): `QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB`
+  - URL: https://ipfs.io/ipfs/QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB *(pending)*
 
 - **Manuale Operativo - Sustentanz & Bio-Architettura**
-  - CID: `QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC`
-  - URL: https://ipfs.io/ipfs/QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC
+  - CID (Example): `QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC`
+  - URL: https://ipfs.io/ipfs/QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC *(pending)*
+
+**Note**: These CIDs are examples demonstrating the architecture. Before v1.0 production release, the actual manifesto documents (LICENSE.md, CHARTER.md, SECURITY.md, DEPLOYMENT.md) will be uploaded to IPFS and the real CIDs will replace these examples.
 
 ### 9.2 Garanzia di Immutabilità
 Questi CID garantiscono:

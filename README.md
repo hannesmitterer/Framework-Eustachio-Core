@@ -44,13 +44,15 @@ The **Framework Eustachio** is a revolutionary decentralized dashboard that impl
 
 ### IPFS Manifesto Anchors
 
-The framework's core documents are permanently stored on IPFS:
+The framework's core documents will be permanently stored on IPFS:
 
-| Document | CID | Gateway Link |
+**Note**: The CIDs below are examples for demonstration. Actual manifesto documents will be uploaded to IPFS and the CIDs will be updated before v1.0 production release.
+
+| Document | CID (Example) | Gateway Link |
 |----------|-----|--------------|
-| **Dashboard Universale** | `QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA` | [View on IPFS](https://ipfs.io/ipfs/QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA) |
-| **Kernel Logic** | `QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB` | [View on IPFS](https://ipfs.io/ipfs/QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB) |
-| **Manuale Operativo** | `QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC` | [View on IPFS](https://ipfs.io/ipfs/QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC) |
+| **Dashboard Universale** | `QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA` | [View on IPFS](https://ipfs.io/ipfs/QmXp7GvR4z8wY9kL2n6BqS1tH3m5jU8vP9cX2yZ1wQ4rA) *(pending)* |
+| **Kernel Logic** | `QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB` | [View on IPFS](https://ipfs.io/ipfs/QmZt9vR1qL8kP4cX3n7BwS2tM5jY8uH1vR9cX2zW1wQ6rB) *(pending)* |
+| **Manuale Operativo** | `QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC` | [View on IPFS](https://ipfs.io/ipfs/QmRy2vH9qL1kP5cX4n8BwS3tN6jZ9uI2vT1cX3zX2wQ7rC) *(pending)* |
 
 ---
 
