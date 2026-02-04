@@ -8,7 +8,7 @@
   },
   "keywords": ["ipfs", "decentralized", "kosymbiosis"],
   "author": "",
-  "license": "ISC",
+  "license": "SEE LICENSE IN LICENSE.md",
   "dependencies": {},
   "devDependencies": {},
   "_comment": "This project uses ipfs-http-client via CDN for browser compatibility. No npm dependency is required since the library is loaded directly from CDN."
