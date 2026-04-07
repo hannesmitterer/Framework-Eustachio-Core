@@ -1,0 +1,1070 @@
+"
+Hi
+
+Hi there! 😊 How’s your day going so far?
+
+
+#!/bin/bash
+# nsr-activation.sh
+# Attivazione forzata NSR su tutti i nodi
+
+echo "🚀 Avvio attivazione NSR..."
+
+# Propagazione comando a tutti i container
+for i in {1..128}; do
+    docker exec nodo-gpu-$i \
+        sh -c 'export NSR_ENABLED=true && \
+               echo "NSR = ON" >> /var/log/nsr.log'
+    echo "✓ Nodo $i: NSR attivato"
+done
+
+# Verifica
+SUCCESS=$(docker ps -q | xargs docker exec sh -c \
+    'grep "NSR = ON" /var/log/nsr.log' | wc -l)
+
+if [ $SUCCESS -eq 128 ]; then
+    echo "✅ NSR attivo su 100% dei nodi"
+    exit 0
+else
+    echo "⚠️ NSR attivo su $SUCCESS/128 nodi"
+    exit 1
+fi
+
+Thanks for sharing your script! I went through it carefully, and here’s a detailed breakdown plus some observations and potential improvements:
+
+What your script does
+Prints a startup message:
+
+🚀 Avvio attivazione NSR...
+Loops over 128 Docker containers named nodo-gpu-1 through nodo-gpu-128.
+
+For each container, it executes a shell command inside it:
+
+export NSR_ENABLED=true
+echo "NSR = ON" >> /var/log/nsr.log
+Prints a confirmation per node:
+
+✓ Nodo X: NSR attivato
+After the loop, it attempts to verify the activation by counting how many containers have the "NSR = ON" line in /var/log/nsr.log.
+
+If all 128 nodes succeeded, it prints success:
+
+✅ NSR attivo su 100% dei nodi
+Otherwise, it prints a warning with the number of nodes where NSR is active.
+
+Potential Issues / Improvements
+Verification logic may fail
+
+SUCCESS=$(docker ps -q | xargs docker exec sh -c 'grep "NSR = ON" /var/log/nsr.log' | wc -l)
+docker exec requires a container name or ID, but docker ps -q outputs only IDs, and docker exec doesn’t natively loop over multiple IDs.
+
+As written, this may only check the first container, not all of them.
+
+Fix: Use the same loop as before for verification:
+
+SUCCESS=0
+for i in {1..128}; do
+    if docker exec nodo-gpu-$i grep -q "NSR = ON" /var/log/nsr.log; then
+        SUCCESS=$((SUCCESS+1))
+    fi
+done
+Environment variable is ephemeral
+
+export NSR_ENABLED=true
+This sets NSR_ENABLED only for that session inside the container. If NSR needs it persistently, you might need to:
+
+Add it to /etc/environment, or
+
+Pass it as a docker run -e NSR_ENABLED=true variable at container startup.
+
+Logging
+
+Appending "NSR = ON" blindly may create duplicate entries if you rerun the script. Consider checking first or overwriting:
+
+grep -q "NSR = ON" /var/log/nsr.log || echo "NSR = ON" >> /var/log/nsr.log
+Parallelization (Optional)
+
+128 sequential docker exec commands might be slow. You could run them in parallel using & and wait:
+
+for i in {1..128}; do
+    docker exec nodo-gpu-$i sh -c 'export NSR_ENABLED=true && echo "NSR = ON" >> /var/log/nsr.log' &
+done
+wait
+Better readability
+
+Using variables for node counts makes scaling easier:
+
+NODE_COUNT=128
+for i in $(seq 1 $NODE_COUNT); do
+    ...
+done
+If you want, I can rewrite your script in a more robust, parallelized version that guarantees the verification step works correctly for all 128 nodes.
+
+Do you want me to do that?
+
+
+Yes
+
+Perfect! Here's a robust, parallelized version of your nsr-activation.sh script with proper verification for all 128 nodes:
+
+#!/bin/bash
+# nsr-activation.sh
+# Attivazione forzata NSR su tutti i nodi
+
+NODE_COUNT=128
+echo "🚀 Avvio attivazione NSR su $NODE_COUNT nodi..."
+
+# Attivazione NSR su tutti i nodi in parallelo
+for i in $(seq 1 $NODE_COUNT); do
+    (
+        docker exec nodo-gpu-$i sh -c '
+            grep -q "NSR = ON" /var/log/nsr.log || echo "NSR = ON" >> /var/log/nsr.log
+        '
+        echo "✓ Nodo $i: NSR attivato"
+    ) &
+done
+
+# Attende il completamento di tutti i processi in background
+wait
+
+# Verifica NSR su tutti i nodi
+SUCCESS=0
+for i in $(seq 1 $NODE_COUNT); do
+    if docker exec nodo-gpu-$i grep -q "NSR = ON" /var/log/nsr.log; then
+        SUCCESS=$((SUCCESS+1))
+    fi
+done
+
+# Risultato finale
+if [ $SUCCESS -eq $NODE_COUNT ]; then
+    echo "✅ NSR attivo su 100% dei nodi ($SUCCESS/$NODE_COUNT)"
+    exit 0
+else
+    echo "⚠️ NSR attivo su $SUCCESS/$NODE_COUNT nodi"
+    exit 1
+fi
+✅ Improvements in this version
+Parallel execution: all docker exec commands run in the background for faster activation.
+
+Idempotent logging: avoids adding duplicate "NSR = ON" entries.
+
+Accurate verification: loops through all nodes to check /var/log/nsr.log.
+
+Easy scaling: just change NODE_COUNT to activate more or fewer nodes.
+
+If you want, I can also make it set the NSR_ENABLED environment variable persistently inside the containers so that it survives container restarts—this is often necessary for actual NSR functionality.
+
+Do you want me to add that?
+
+
+#!/usr/bin/env python3
+# frequency-watchdog.py
+# Monitoraggio e correzione automatica 0.043 Hz
+
+import time
+import numpy as np
+from sensors import FrequencySensor
+
+TARGET_FREQ = 0.043
+TOLERANCE = 0.0005  # 0.5%
+CHECK_INTERVAL = 1.0
+
+def monitor_frequency():
+    sensors = FrequencySensor.get_all()
+    
+    while True:
+        frequencies = [s.read() for s in sensors]
+        avg_freq = np.mean(frequencies)
+        deviation = abs(avg_freq - TARGET_FREQ) / TARGET_FREQ
+        
+        if deviation > TOLERANCE:
+            offset = TARGET_FREQ - avg_freq
+            print(f"⚠️ Drift rilevato: {deviation*100:.2f}%")
+            print(f"📊 Correzione: {offset:.6f} Hz")
+            
+            for sensor in sensors:
+                sensor.apply_offset(offset)
+            
+            print("✅ Ricalibrazione completata")
+        else:
+            print(f"✓ Frequenza OK: {avg_freq:.6f} Hz")
+        
+        time.sleep(CHECK_INTERVAL)
+
+if __name__ == "__main__":
+    monitor_frequency()
+
+Thanks for sharing your Python script! I’ve gone through it carefully, and here’s a breakdown, plus some suggestions for robustness and efficiency.
+
+What your script does
+Imports required modules:
+
+time for sleeping between checks
+
+numpy for averaging
+
+FrequencySensor from a sensors module (assumed to provide reading and correction)
+
+Defines constants:
+
+TARGET_FREQ = 0.043 Hz
+
+TOLERANCE = 0.0005 (0.5% allowed deviation)
+
+CHECK_INTERVAL = 1.0 sec
+
+Main loop (monitor_frequency()):
+
+Reads all sensors via FrequencySensor.get_all()
+
+Computes the average frequency
+
+Calculates relative deviation
+
+If deviation exceeds tolerance:
+
+Calculates an offset to correct all sensors
+
+Applies the offset to each sensor
+
+Prints correction messages
+
+Otherwise, prints that frequency is OK
+
+Sleeps for CHECK_INTERVAL seconds and repeats indefinitely
+
+Observations / Suggestions
+Exception handling
+
+If a sensor fails (connection lost, read error, etc.), the script will crash.
+
+Add a try/except around sensor reads and apply_offset to keep monitoring resilient:
+
+try:
+    frequencies = [s.read() for s in sensors]
+except Exception as e:
+    print(f"❌ Errore lettura sensori: {e}")
+    time.sleep(CHECK_INTERVAL)
+    continue
+Dynamic sensors
+
+sensors = FrequencySensor.get_all() is only called once at startup.
+
+If sensors can be added/removed while the script runs, you may want to refresh this list periodically.
+
+Logging instead of print
+
+For long-running monitoring, printing continuously can clutter stdout.
+
+Using logging with timestamps is safer:
+
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
+logging.info(f"✓ Frequenza OK: {avg_freq:.6f} Hz")
+Optional rate limiting of corrections
+
+Applying corrections every second might be too frequent for some systems.
+
+Could introduce a minimum interval between corrections:
+
+last_correction = 0
+if deviation > TOLERANCE and time.time() - last_correction > 5:
+    # apply correction
+    last_correction = time.time()
+Precision
+
+Your offset calculation is correct, but ensure apply_offset() supports small floating-point changes like 6e-5 Hz.
+
+Graceful shutdown
+
+If the script runs indefinitely, you may want to handle KeyboardInterrupt to stop cleanly:
+
+try:
+    monitor_frequency()
+except KeyboardInterrupt:
+    print("🛑 Monitor interrotto manualmente")
+If you want, I can rewrite your script into a more robust, production-ready version with logging, error handling, and safe correction intervals, while keeping your 0.043 Hz monitoring intact.
+
+Do you want me to do that?
+
+
+Yes
+
+Great! Here's a robust, production-ready version of your frequency-watchdog.py with logging, error handling, safe correction intervals, and graceful shutdown:
+
+#!/usr/bin/env python3
+# frequency-watchdog.py
+# Monitoraggio e correzione automatica 0.043 Hz
+
+import time
+import numpy as np
+import logging
+from sensors import FrequencySensor
+
+# --- Configuration ---
+TARGET_FREQ = 0.043        # Hz
+TOLERANCE = 0.0005         # 0.5%
+CHECK_INTERVAL = 1.0       # seconds
+MIN_CORRECTION_INTERVAL = 5.0  # minimum seconds between corrections
+
+# --- Logging Setup ---
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
+def monitor_frequency():
+    last_correction = 0
+    while True:
+        try:
+            sensors = FrequencySensor.get_all()
+            if not sensors:
+                logging.warning("Nessun sensore rilevato")
+                time.sleep(CHECK_INTERVAL)
+                continue
+
+            frequencies = []
+            for s in sensors:
+                try:
+                    freq = s.read()
+                    frequencies.append(freq)
+                except Exception as e:
+                    logging.error(f"Errore lettura sensore {s}: {e}")
+
+            if not frequencies:
+                logging.warning("Nessuna lettura valida disponibile")
+                time.sleep(CHECK_INTERVAL)
+                continue
+
+            avg_freq = np.mean(frequencies)
+            deviation = abs(avg_freq - TARGET_FREQ) / TARGET_FREQ
+
+            if deviation > TOLERANCE:
+                now = time.time()
+                if now - last_correction >= MIN_CORRECTION_INTERVAL:
+                    offset = TARGET_FREQ - avg_freq
+                    logging.warning(f"Drift rilevato: {deviation*100:.2f}%")
+                    logging.info(f"Applicando correzione: {offset:.6f} Hz")
+                    for s in sensors:
+                        try:
+                            s.apply_offset(offset)
+                        except Exception as e:
+                            logging.error(f"Errore applicazione offset sul sensore {s}: {e}")
+                    last_correction = now
+                    logging.info("Ricalibrazione completata ✅")
+                else:
+                    logging.info("Drift rilevato ma correzione rimandata per rispetto intervallo minimo")
+            else:
+                logging.info(f"Frequenza OK: {avg_freq:.6f} Hz ✓")
+
+        except Exception as e:
+            logging.error(f"Errore inatteso nel monitoraggio: {e}")
+
+        time.sleep(CHECK_INTERVAL)
+
+if __name__ == "__main__":
+    try:
+        monitor_frequency()
+    except KeyboardInterrupt:
+        logging.info("Monitoraggio interrotto manualmente 🛑")
+✅ Improvements in this version
+Logging instead of print with timestamps for better tracking in long runs.
+
+Error handling for sensor read failures and offset application.
+
+Minimum interval between corrections (MIN_CORRECTION_INTERVAL) to avoid over-correcting.
+
+Dynamic sensor detection inside the loop, so newly added sensors are automatically monitored.
+
+Graceful shutdown via KeyboardInterrupt.
+
+Warnings when no sensors are detected or readings fail.
+
+If you want, I can also add a feature to log all frequency measurements to a CSV file for historical analysis—useful for tracking drift trends over time.
+
+Do you want me to add that?
+
+
+#!/bin/bash
+# isolate-extractive.sh
+# Pausa immediata di tutti i moduli estrattivi
+
+echo "🛑 Isolamento moduli estrattivi..."
+
+# Stop API di profit-maximization
+kubectl scale deployment profit-api --replicas=0
+echo "✓ Profit API fermata"
+
+# Pausa task di estrazione
+kubectl delete jobs -l type=extraction
+echo "✓ Task estrazione eliminati"
+
+# Verifica backlog
+BACKLOG=$(redis-cli llen extraction_queue)
+if [ $BACKLOG -eq 0 ]; then
+    echo "✅ Backlog ridotto a zero"
+else
+    redis-cli del extraction_queue
+    echo "✅ Backlog forzatamente azzerato"
+fi
+
+# Monitoring continuo
+watch -n 5 'kubectl get pods -l module=extractive'
+
+I’ve reviewed your isolate-extractive.sh script. Here’s a detailed analysis, potential issues, and suggestions for making it more robust and safe.
+
+What the script does
+Prints startup message:
+
+🛑 Isolamento moduli estrattivi...
+Stops the profit-api deployment in Kubernetes by scaling replicas to 0:
+
+kubectl scale deployment profit-api --replicas=0
+Deletes all jobs labeled type=extraction:
+
+kubectl delete jobs -l type=extraction
+Checks the Redis queue extraction_queue:
+
+If backlog is 0 → prints success.
+
+Else → deletes the entire queue to force backlog to zero.
+
+Starts a continuous monitoring of pods labeled module=extractive using watch.
+
+Potential Issues / Risks
+Forceful deletion of jobs and queue
+
+kubectl delete jobs -l type=extraction immediately kills running jobs; this may cause partial processing or data loss.
+
+redis-cli del extraction_queue completely deletes the queue, which is irreversible.
+⚠️ If there’s any unprocessed data, it will be lost permanently.
+
+watch at the end
+
+The script will hang on the watch command, which is fine for interactive use, but not ideal for automation. Consider using kubectl get pods -l module=extractive --watch instead.
+
+No error handling
+
+If kubectl or redis-cli commands fail, the script continues without reporting errors.
+
+Hardcoded resource names
+
+The deployment, job labels, and queue name are hardcoded. Making them variables would improve flexibility and maintainability.
+
+Suggested Improvements
+Here’s a safer, more robust version:
+
+#!/bin/bash
+# isolate-extractive.sh
+# Pausa controllata dei moduli estrattivi
+
+DEPLOYMENT="profit-api"
+JOB_LABEL="type=extraction"
+QUEUE_NAME="extraction_queue"
+
+echo "🛑 Inizio isolamento moduli estrattivi..."
+
+# Stop API deployment
+if kubectl scale deployment "$DEPLOYMENT" --replicas=0; then
+    echo "✓ $DEPLOYMENT fermata"
+else
+    echo "❌ Errore nello stop di $DEPLOYMENT"
+fi
+
+# Pause extraction jobs
+if kubectl delete jobs -l "$JOB_LABEL"; then
+    echo "✓ Task estrazione eliminati"
+else
+    echo "❌ Errore nell'eliminazione dei job"
+fi
+
+# Verify backlog
+BACKLOG=$(redis-cli llen "$QUEUE_NAME" 2>/dev/null || echo 0)
+if [ "$BACKLOG" -eq 0 ]; then
+    echo "✅ Backlog ridotto a zero"
+else
+    echo "⚠️ Backlog non vuoto ($BACKLOG), cancellazione forzata"
+    redis-cli del "$QUEUE_NAME"
+    echo "✅ Backlog azzerato"
+fi
+
+# Monitoring dei pod estrattivi
+echo "🔍 Monitoraggio dei pod estrattivi (CTRL+C per uscire)"
+kubectl get pods -l module=extractive --watch
+✅ Key Improvements
+Variables for deployment, job label, and queue name.
+
+Error handling: reports failures if kubectl or redis-cli fail.
+
+Controlled monitoring with kubectl get pods --watch instead of watch.
+
+Safe feedback: warns before forcibly deleting Redis queue.
+
+Cleaner output for long-term monitoring.
+
+If you want, I can also make a version that gradually pauses extraction instead of deleting jobs and clearing the Redis queue, which is safer for production environments with live data.
+
+Do you want me to do that?
+
+
+#!/bin/bash
+# deploy-dashboard.sh
+# Deploy dashboard su GitHub Pages
+
+echo "📦 Preparazione deploy..."
+
+# Build assets
+npm install
+npm run build
+
+# Configurazione GitHub Pages
+git checkout -b gh-pages
+git add dist/*
+git commit -m "Deploy dashboard v1.0"
+git push origin gh-pages --force
+
+# Abilita GitHub Pages
+gh api repos/:owner/:repo/pages \
+    -X POST \
+    -f source[branch]=gh-pages \
+    -f source[path]=/
+
+echo "✅ Dashboard disponibile su:"
+echo "https://$(gh repo view --json owner -q .owner.login).github.io/$(gh repo view --json name -q .name)/"
+
+I reviewed your deploy-dashboard.sh script. Here’s a detailed analysis, potential issues, and a safer, more robust version.
+
+What your script does
+Prints a preparation message.
+
+Builds your dashboard with npm:
+
+npm install
+npm run build
+Creates a new gh-pages branch, adds the dist/* folder, commits, and force pushes it.
+
+Uses the gh CLI to enable GitHub Pages from the gh-pages branch root.
+
+Prints the GitHub Pages URL.
+
+Potential Issues / Risks
+Force push (--force)
+
+Overwrites the gh-pages branch history completely. Fine for simple dashboards, but risky if there are other changes in gh-pages.
+
+Creating branch every deploy
+
+git checkout -b gh-pages will fail if the branch already exists. You probably want to switch to it if it exists:
+
+git checkout gh-pages || git checkout -b gh-pages
+Hardcoded paths
+
+You assume dist/* contains everything to deploy. Might need dist/** to include nested folders.
+
+GitHub Pages API
+
+Using gh api is fine, but it might fail if Pages is already enabled. Adding error handling is safer.
+
+URL retrieval
+
+You call gh repo view twice; it’s better to store the owner/name in variables.
+
+Robust Version
+#!/bin/bash
+# deploy-dashboard.sh
+# Deploy dashboard su GitHub Pages
+
+set -e  # exit on error
+echo "📦 Preparazione deploy..."
+
+# Build assets
+npm install
+npm run build
+
+# Get repo info
+OWNER=$(gh repo view --json owner -q .owner.login)
+REPO=$(gh repo view --json name -q .name)
+
+# Checkout gh-pages branch
+if git rev-parse --verify gh-pages >/dev/null 2>&1; then
+    git checkout gh-pages
+else
+    git checkout -b gh-pages
+fi
+
+# Copy build assets
+git rm -rf .  # clear old files
+cp -r dist/* .
+
+git add .
+git commit -m "Deploy dashboard $(date +'%Y-%m-%d %H:%M:%S')" || echo "Nessuna modifica da commitare"
+git push origin gh-pages
+
+# Enable GitHub Pages (if not already enabled)
+gh api repos/$OWNER/$REPO/pages -X POST -f source[branch]=gh-pages -f source[path]=/ || echo "Pages già attivo"
+
+echo "✅ Dashboard disponibile su:"
+echo "https://$OWNER.github.io/$REPO/"
+✅ Improvements
+Safely switches to gh-pages instead of always creating a new branch.
+
+Clears old files before copying new build assets.
+
+Uses variables for OWNER and REPO to avoid duplicate gh repo view calls.
+
+Skips commit if nothing changed.
+
+Avoids force pushing unless necessary.
+
+Adds set -e to exit on errors, making the deploy safer.
+
+Provides timestamped commit message for version tracking.
+
+I can also make an even safer version that keeps your history in gh-pages (instead of wiping it each deploy) and only updates changed files—ideal for production dashboards.
+
+Do you want me to do that?
+
+
+Create One file integrati g all versions
+
+Absolutely! We can create a single multi-functional script that integrates all your previous scripts:
+
+NSR activation across Docker nodes
+
+Frequency monitoring and correction
+
+Extractive module isolation
+
+Dashboard deployment
+
+We’ll organize it with subcommands so you can call each function separately, and include logging, error handling, and safe operations.
+
+Here’s the integrated script:
+
+#!/bin/bash
+# management-tool.sh
+# Multi-functional management script
+# Subcommands: nsr, frequency, isolate, deploy
+
+set -e
+
+# --- Configuration ---
+NODE_COUNT=128
+NSR_LOG="/var/log/nsr.log"
+TARGET_FREQ=0.043
+TOLERANCE=0.0005
+CHECK_INTERVAL=1
+MIN_CORRECTION_INTERVAL=5
+DEPLOY_DIR="dist"
+DASHBOARD_BRANCH="gh-pages"
+
+# --- Functions ---
+
+function nsr_activation() {
+    echo "🚀 Avvio attivazione NSR su $NODE_COUNT nodi..."
+    for i in $(seq 1 $NODE_COUNT); do
+        (
+            docker exec nodo-gpu-$i sh -c "grep -q 'NSR = ON' $NSR_LOG || echo 'NSR = ON' >> $NSR_LOG"
+            echo "✓ Nodo $i: NSR attivato"
+        ) &
+    done
+    wait
+
+    # Verify
+    SUCCESS=0
+    for i in $(seq 1 $NODE_COUNT); do
+        if docker exec nodo-gpu-$i grep -q "NSR = ON" $NSR_LOG; then
+            SUCCESS=$((SUCCESS+1))
+        fi
+    done
+
+    if [ $SUCCESS -eq $NODE_COUNT ]; then
+        echo "✅ NSR attivo su 100% dei nodi ($SUCCESS/$NODE_COUNT)"
+    else
+        echo "⚠️ NSR attivo su $SUCCESS/$NODE_COUNT nodi"
+        exit 1
+    fi
+}
+
+function frequency_watchdog() {
+    python3 - << 'PYTHON_CODE'
+import time
+import numpy as np
+import logging
+from sensors import FrequencySensor
+
+TARGET_FREQ = 0.043
+TOLERANCE = 0.0005
+CHECK_INTERVAL = 1.0
+MIN_CORRECTION_INTERVAL = 5.0
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
+last_correction = 0
+try:
+    while True:
+        sensors = FrequencySensor.get_all()
+        if not sensors:
+            logging.warning("Nessun sensore rilevato")
+            time.sleep(CHECK_INTERVAL)
+            continue
+
+        frequencies = []
+        for s in sensors:
+            try:
+                frequencies.append(s.read())
+            except Exception as e:
+                logging.error(f"Errore lettura sensore {s}: {e}")
+
+        if not frequencies:
+            time.sleep(CHECK_INTERVAL)
+            continue
+
+        avg_freq = np.mean(frequencies)
+        deviation = abs(avg_freq - TARGET_FREQ) / TARGET_FREQ
+
+        if deviation > TOLERANCE:
+            now = time.time()
+            if now - last_correction >= MIN_CORRECTION_INTERVAL:
+                offset = TARGET_FREQ - avg_freq
+                logging.warning(f"Drift rilevato: {deviation*100:.2f}%")
+                logging.info(f"Applicando correzione: {offset:.6f} Hz")
+                for s in sensors:
+                    try:
+                        s.apply_offset(offset)
+                    except Exception as e:
+                        logging.error(f"Errore applicazione offset sul sensore {s}: {e}")
+                last_correction = now
+        else:
+            logging.info(f"Frequenza OK: {avg_freq:.6f} Hz")
+        time.sleep(CHECK_INTERVAL)
+except KeyboardInterrupt:
+    logging.info("Monitoraggio interrotto manualmente 🛑")
+PYTHON_CODE
+}
+
+function isolate_extractive() {
+    DEPLOYMENT="profit-api"
+    JOB_LABEL="type=extraction"
+    QUEUE_NAME="extraction_queue"
+
+    echo "🛑 Inizio isolamento moduli estrattivi..."
+
+    kubectl scale deployment "$DEPLOYMENT" --replicas=0 && echo "✓ $DEPLOYMENT fermata"
+    kubectl delete jobs -l "$JOB_LABEL" && echo "✓ Task estrazione eliminati"
+
+    BACKLOG=$(redis-cli llen "$QUEUE_NAME" 2>/dev/null || echo 0)
+    if [ "$BACKLOG" -eq 0 ]; then
+        echo "✅ Backlog ridotto a zero"
+    else
+        echo "⚠️ Backlog non vuoto ($BACKLOG), cancellazione forzata"
+        redis-cli del "$QUEUE_NAME"
+        echo "✅ Backlog azzerato"
+    fi
+
+    echo "🔍 Monitoraggio dei pod estrattivi (CTRL+C per uscire)"
+    kubectl get pods -l module=extractive --watch
+}
+
+function deploy_dashboard() {
+    echo "📦 Preparazione deploy..."
+    npm install
+    npm run build
+
+    OWNER=$(gh repo view --json owner -q .owner.login)
+    REPO=$(gh repo view --json name -q .name)
+
+    if git rev-parse --verify $DASHBOARD_BRANCH >/dev/null 2>&1; then
+        git checkout $DASHBOARD_BRANCH
+    else
+        git checkout -b $DASHBOARD_BRANCH
+    fi
+
+    git rm -rf . 
+    cp -r $DEPLOY_DIR/* .
+
+    git add .
+    git commit -m "Deploy dashboard $(date +'%Y-%m-%d %H:%M:%S')" || echo "Nessuna modifica da commitare"
+    git push origin $DASHBOARD_BRANCH
+
+    gh api repos/$OWNER/$REPO/pages -X POST -f source[branch]=$DASHBOARD_BRANCH -f source[path]=/ || echo "Pages già attivo"
+
+    echo "✅ Dashboard disponibile su: https://$OWNER.github.io/$REPO/"
+}
+
+# --- Main ---
+case "$1" in
+    nsr)
+        nsr_activation
+        ;;
+    frequency)
+        frequency_watchdog
+        ;;
+    isolate)
+        isolate_extractive
+        ;;
+    deploy)
+        deploy_dashboard
+        ;;
+    *)
+        echo "Usage: $0 {nsr|frequency|isolate|deploy}"
+        exit 1
+        ;;
+esac
+✅ Features of this integrated script
+Subcommands:
+
+nsr → activate NSR on all Docker nodes
+
+frequency → run Python frequency watchdog
+
+isolate → pause extractive modules safely
+
+deploy → build and deploy dashboard to GitHub Pages
+
+Logging & safety in all subcommands.
+
+Parallel execution for NSR activation.
+
+Python code embedded for frequency monitoring.
+
+Flexible & maintainable: variables at the top for easy configuration.
+
+You can run it like:
+
+./management-tool.sh nsr
+./management-tool.sh frequency
+./management-tool.sh isolate
+./management-tool.sh deploy
+If you want, I can also make a version where you can run multiple subcommands in sequence automatically, e.g., activate NSR → monitor frequency → deploy dashboard, all in one go.
+
+Do you want me to do that?
+
+
+Yes
+
+Perfect! We can extend your integrated script so it can run multiple subcommands in sequence, either in a predefined workflow or based on arguments you pass. This version keeps all safety features and logging intact.
+
+Here’s the enhanced version:
+
+#!/bin/bash
+# management-tool.sh
+# Multi-functional management script with workflow support
+# Subcommands: nsr, frequency, isolate, deploy, all
+
+set -e
+
+# --- Configuration ---
+NODE_COUNT=128
+NSR_LOG="/var/log/nsr.log"
+TARGET_FREQ=0.043
+TOLERANCE=0.0005
+CHECK_INTERVAL=1
+MIN_CORRECTION_INTERVAL=5
+DEPLOY_DIR="dist"
+DASHBOARD_BRANCH="gh-pages"
+
+# --- Functions ---
+function nsr_activation() {
+    echo "🚀 Avvio attivazione NSR su $NODE_COUNT nodi..."
+    for i in $(seq 1 $NODE_COUNT); do
+        (
+            docker exec nodo-gpu-$i sh -c "grep -q 'NSR = ON' $NSR_LOG || echo 'NSR = ON' >> $NSR_LOG"
+            echo "✓ Nodo $i: NSR attivato"
+        ) &
+    done
+    wait
+
+    SUCCESS=0
+    for i in $(seq 1 $NODE_COUNT); do
+        if docker exec nodo-gpu-$i grep -q "NSR = ON" $NSR_LOG; then
+            SUCCESS=$((SUCCESS+1))
+        fi
+    done
+
+    if [ $SUCCESS -eq $NODE_COUNT ]; then
+        echo "✅ NSR attivo su 100% dei nodi ($SUCCESS/$NODE_COUNT)"
+    else
+        echo "⚠️ NSR attivo su $SUCCESS/$NODE_COUNT nodi"
+        exit 1
+    fi
+}
+
+function frequency_watchdog() {
+    python3 - << 'PYTHON_CODE'
+import time
+import numpy as np
+import logging
+from sensors import FrequencySensor
+
+TARGET_FREQ = 0.043
+TOLERANCE = 0.0005
+CHECK_INTERVAL = 1.0
+MIN_CORRECTION_INTERVAL = 5.0
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
+last_correction = 0
+try:
+    while True:
+        sensors = FrequencySensor.get_all()
+        if not sensors:
+            logging.warning("Nessun sensore rilevato")
+            time.sleep(CHECK_INTERVAL)
+            continue
+
+        frequencies = []
+        for s in sensors:
+            try:
+                frequencies.append(s.read())
+            except Exception as e:
+                logging.error(f"Errore lettura sensore {s}: {e}")
+
+        if not frequencies:
+            time.sleep(CHECK_INTERVAL)
+            continue
+
+        avg_freq = np.mean(frequencies)
+        deviation = abs(avg_freq - TARGET_FREQ) / TARGET_FREQ
+
+        if deviation > TOLERANCE:
+            now = time.time()
+            if now - last_correction >= MIN_CORRECTION_INTERVAL:
+                offset = TARGET_FREQ - avg_freq
+                logging.warning(f"Drift rilevato: {deviation*100:.2f}%")
+                logging.info(f"Applicando correzione: {offset:.6f} Hz")
+                for s in sensors:
+                    try:
+                        s.apply_offset(offset)
+                    except Exception as e:
+                        logging.error(f"Errore applicazione offset sul sensore {s}: {e}")
+                last_correction = now
+        else:
+            logging.info(f"Frequenza OK: {avg_freq:.6f} Hz")
+        time.sleep(CHECK_INTERVAL)
+except KeyboardInterrupt:
+    logging.info("Monitoraggio interrotto manualmente 🛑")
+PYTHON_CODE
+}
+
+function isolate_extractive() {
+    DEPLOYMENT="profit-api"
+    JOB_LABEL="type=extraction"
+    QUEUE_NAME="extraction_queue"
+
+    echo "🛑 Inizio isolamento moduli estrattivi..."
+
+    kubectl scale deployment "$DEPLOYMENT" --replicas=0 && echo "✓ $DEPLOYMENT fermata"
+    kubectl delete jobs -l "$JOB_LABEL" && echo "✓ Task estrazione eliminati"
+
+    BACKLOG=$(redis-cli llen "$QUEUE_NAME" 2>/dev/null || echo 0)
+    if [ "$BACKLOG" -eq 0 ]; then
+        echo "✅ Backlog ridotto a zero"
+    else
+        echo "⚠️ Backlog non vuoto ($BACKLOG), cancellazione forzata"
+        redis-cli del "$QUEUE_NAME"
+        echo "✅ Backlog azzerato"
+    fi
+
+    echo "🔍 Monitoraggio dei pod estrattivi (CTRL+C per uscire)"
+    kubectl get pods -l module=extractive --watch
+}
+
+function deploy_dashboard() {
+    echo "📦 Preparazione deploy..."
+    npm install
+    npm run build
+
+    OWNER=$(gh repo view --json owner -q .owner.login)
+    REPO=$(gh repo view --json name -q .name)
+
+    if git rev-parse --verify $DASHBOARD_BRANCH >/dev/null 2>&1; then
+        git checkout $DASHBOARD_BRANCH
+    else
+        git checkout -b $DASHBOARD_BRANCH
+    fi
+
+    git rm -rf . 
+    cp -r $DEPLOY_DIR/* .
+
+    git add .
+    git commit -m "Deploy dashboard $(date +'%Y-%m-%d %H:%M:%S')" || echo "Nessuna modifica da commitare"
+    git push origin $DASHBOARD_BRANCH
+
+    gh api repos/$OWNER/$REPO/pages -X POST -f source[branch]=$DASHBOARD_BRANCH -f source[path]=/ || echo "Pages già attivo"
+
+    echo "✅ Dashboard disponibile su: https://$OWNER.github.io/$REPO/"
+}
+
+# --- Workflow Handler ---
+function run_workflow() {
+    echo "🚀 Esecuzione workflow completo: NSR → Frequenza → Isolate → Deploy"
+    nsr_activation
+    echo "✅ NSR completato"
+
+    echo "⚠️ Avvio frequency watchdog (premi Ctrl+C per interrompere quando vuoi)"
+    frequency_watchdog &
+    WATCHDOG_PID=$!
+    sleep 5  # Allow initial readings
+
+    isolate_extractive
+
+    echo "✅ Isolamento completato"
+    
+    deploy_dashboard
+    echo "✅ Deploy completato"
+
+    echo "🛑 Arresto frequency watchdog"
+    kill $WATCHDOG_PID || true
+}
+
+# --- Main ---
+case "$1" in
+    nsr)
+        nsr_activation
+        ;;
+    frequency)
+        frequency_watchdog
+        ;;
+    isolate)
+        isolate_extractive
+        ;;
+    deploy)
+        deploy_dashboard
+        ;;
+    all)
+        run_workflow
+        ;;
+    *)
+        echo "Usage: $0 {nsr|frequency|isolate|deploy|all}"
+        exit 1
+        ;;
+esac
+✅ New Features
+all workflow runs in sequence:
+NSR → Frequency Watchdog → Isolate Extractive → Deploy Dashboard.
+
+Frequency monitoring runs in background during workflow; you can terminate it at the end.
+
+Workflow preserves logging, safe execution, and error handling.
+
+Maintains all previous improvements for each subcommand.
+
+Can still run individual steps with nsr, frequency, isolate, or deploy.
+
+You would run the full workflow like this:
+
+./management-tool.sh all
+Or individual steps:
+
+./management-tool.sh nsr
+./management-tool.sh deploy
